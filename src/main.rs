@@ -3,11 +3,21 @@ use wasm_bindgen::JsCast;
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 use yew::prelude::*;
 
+mod world;
+mod object;
+mod rectangle;
+mod geometry;
+
+use world::World;
+
 enum Msg {
     Render(f64),
 }
 
 struct App {
+    world: World,
+    last_tick: f64,
+
     node_ref: NodeRef,
     _render_loop: Option<AnimationFrame>,
 }
@@ -18,8 +28,10 @@ impl Component for App {
 
     fn create(_ctx: &Context<Self>) -> Self {
         Self {
+            world: World::new(),
             node_ref: NodeRef::default(),
             _render_loop: None,
+            last_tick: 0.0,
         }
     }
 
@@ -34,13 +46,10 @@ impl Component for App {
                     .dyn_into::<CanvasRenderingContext2d>()
                     .unwrap();
 
-                context.set_fill_style(&("#f00".to_string()).into());
-                context.begin_path();
-                context.move_to(150.0 + time / 200.0, 100.0);
-                context.line_to(100.0 + time / 200.0, 150.0);
-                context.line_to(100.0 + time / 200.0, 100.0);
-                context.close_path();
-                context.fill();
+                context.clear_rect(0.0, 0.0, canvas.width() as f64, canvas.height() as f64);
+                self.world.tick((time - self.last_tick) / 1000.0);
+                self.last_tick = time;
+                self.world.draw(&context);
 
                 let handle = {
                     let link = ctx.link().clone();
@@ -55,7 +64,7 @@ impl Component for App {
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
         html! {
-            <canvas ref={self.node_ref.clone()} width=300 height=300/>
+            <canvas ref={self.node_ref.clone()} width=1000 height=1000/>
         }
     }
 
