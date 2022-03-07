@@ -1,26 +1,31 @@
-use crate::geometry::{one_dimensional_collision, Rectangle, Vector};
+use crate::collisions::{collide_rect_rect, collide_circle_rect};
+use crate::geometry::{Rectangle, Vector};
 use crate::object::MetaObject;
 
 use web_sys::CanvasRenderingContext2d;
 
 pub struct RectangleObject {
-    shape: Rectangle,
+    pub shape: Rectangle,
     speed: Vector,
     immovable: bool,
 }
 
 impl RectangleObject {
-    pub fn new_obj(x: f64, y: f64, w: f64, h: f64, speed: Vector) -> MetaObject {
-        MetaObject::Rect(RectangleObject {
-            shape: Rectangle { x, y, w, h },
+    pub fn new(x: f64, y: f64, w: f64, h: f64, speed: Vector) -> Self {
+        Self {
+            shape: Rectangle::new(x, y, w, h),
             speed,
             immovable: false,
-        })
+        }
+    }
+
+    pub fn new_obj(x: f64, y: f64, w: f64, h: f64, speed: Vector) -> MetaObject {
+        MetaObject::Rect(Self::new(x, y, w, h, speed))
     }
 
     pub fn new_obj_immovable(x: f64, y: f64, w: f64, h: f64, speed: Vector) -> MetaObject {
         MetaObject::Rect(RectangleObject {
-            shape: Rectangle { x, y, w, h },
+            shape: Rectangle::new(x, y, w, h),
             speed,
             immovable: true,
         })
@@ -41,13 +46,17 @@ impl RectangleObject {
     pub fn bottom(&self) -> f64 {
         self.shape.bottom()
     }
+
+    pub fn center(&self) -> Vector {
+        self.shape.center()
+    }
 }
 
 impl RectangleObject {
     pub fn draw(&self, context: &CanvasRenderingContext2d) {
         context.save();
-        context.set_fill_style(&("#f00".to_string()).into());
         context.begin_path();
+        context.set_fill_style(&("#f00".to_string()).into());
         context.move_to(self.left(), self.top());
         context.line_to(self.right(), self.top());
         context.line_to(self.right(), self.bottom());
@@ -61,43 +70,35 @@ impl RectangleObject {
         if self.immovable {
             return;
         }
-        self.shape.x += self.speed.x() * delta_time;
-        self.shape.y += self.speed.y() * delta_time;
+        self.shape.coord += self.speed * delta_time;
     }
 
     pub fn collides_with(&self, other: &MetaObject) -> Option<Vector> {
         match other {
-            MetaObject::Rect(rect) => {
-                let x = -one_dimensional_collision(
-                    Vector::new(self.left(), self.right()),
-                    Vector::new(rect.left(), rect.right()),
-                );
-                let y = -one_dimensional_collision(
-                    Vector::new(self.top(), self.bottom()),
-                    Vector::new(rect.top(), rect.bottom()),
-                );
-                if x.is_nan() || y.is_nan() {
-                    return None;
-                }
-                if x.abs() > y.abs() {
-                    Some(Vector::new(x, 0.0))
-                } else {
-                    Some(Vector::new(0.0, y))
-                }
-            }
-            _ => None,
+            MetaObject::Rect(rect) => collide_rect_rect(self, rect),
+            MetaObject::Circle(circle) => collide_circle_rect(circle, self).map(|x| x * -1.0),
         }
+    }
+
+    pub fn mov(&mut self, direction: Vector) {
+        if self.immovable {
+            return;
+        }
+        self.shape.coord += direction;
     }
 
     pub fn kick(&mut self, speed: Vector) {
         if self.immovable {
             return;
         }
-        self.speed.x += speed.x();
-        self.speed.y += speed.y();
+        self.speed += speed;
     }
 
     pub fn speed(&self) -> Vector {
         self.speed
+    }
+
+    pub fn aabb(&self) -> Rectangle {
+        self.shape
     }
 }
