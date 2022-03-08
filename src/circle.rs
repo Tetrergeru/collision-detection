@@ -1,5 +1,5 @@
 use crate::{
-    collisions::{collide_circle_rect, collide_cirle_circle},
+    collisions::{collide_circle_rect, collide_cirle_circle, collide_poly_circle},
     geometry::{Rectangle, Vector},
     object::MetaObject,
 };
@@ -31,6 +31,7 @@ impl CircleObject {
         match other {
             MetaObject::Circle(circle) => collide_cirle_circle(self, circle),
             MetaObject::Rect(rect) => collide_circle_rect(self, rect),
+            MetaObject::Poly(poly) => collide_poly_circle(poly, self).map(|it| it * -1.0),
         }
     }
 

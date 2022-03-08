@@ -147,3 +147,8 @@ pub fn project_points<I: Iterator<Item = Vector>>(line: &Rectangle, points: I) -
     }
     Vector::new(min, max)
 }
+
+pub fn project_circle(line: &Rectangle, center: Vector, radius: f64) -> Vector {
+    let c = project_point(line, center);
+    Vector::new(c - radius, c + radius)
+}

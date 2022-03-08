@@ -1,4 +1,4 @@
-use crate::collisions::{collide_circle_rect, collide_rect_rect};
+use crate::collisions::{collide_circle_rect, collide_rect_rect, collide_poly_rect};
 use crate::geometry::{Rectangle, Vector};
 use crate::object::MetaObject;
 
@@ -62,6 +62,7 @@ impl RectangleObject {
         match other {
             MetaObject::Rect(rect) => collide_rect_rect(self, rect),
             MetaObject::Circle(circle) => collide_circle_rect(circle, self).map(|x| x * -1.0),
+            MetaObject::Poly(poly) => collide_poly_rect(poly, self).map(|x| x * -1.0),
         }
     }
 

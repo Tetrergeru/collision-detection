@@ -1,5 +1,5 @@
 use gloo_render::{request_animation_frame, AnimationFrame};
-use wasm_bindgen::{JsCast, prelude::wasm_bindgen};
+use wasm_bindgen::{prelude::wasm_bindgen, JsCast};
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 use yew::prelude::*;
 
@@ -7,6 +7,7 @@ mod circle;
 mod collisions;
 mod geometry;
 mod object;
+mod polyhedron;
 mod rectangle;
 mod world;
 
@@ -25,6 +26,8 @@ struct App {
     last_tick: f64,
     sum_time: f64,
     ticks: u64,
+    width: u64,
+    height: u64,
 
     node_ref: NodeRef,
     _render_loop: Option<AnimationFrame>,
@@ -35,13 +38,17 @@ impl Component for App {
     type Properties = ();
 
     fn create(_ctx: &Context<Self>) -> Self {
+        let width = 1200;
+        let height = 800;
         Self {
-            world: World::new(),
+            world: World::new(width as f64, height as f64),
             node_ref: NodeRef::default(),
             _render_loop: None,
             last_tick: 0.0,
             sum_time: 0.0,
             ticks: 0,
+            width,
+            height,
         }
     }
 
@@ -63,13 +70,12 @@ impl Component for App {
                 self.ticks += 1;
                 log::info!("{} fps", 1.0 / (self.sum_time / self.ticks as f64));
 
-                self.world.tick(delta_time); //(0.1); //
+                self.world.tick(delta_time); //
                 self.last_tick = time;
 
                 draw(&context, self.world.export());
 
                 // self.world.draw(&context);
-
                 let handle = {
                     let link = ctx.link().clone();
                     request_animation_frame(move |time| link.send_message(Msg::Render(time)))
@@ -87,7 +93,7 @@ impl Component for App {
     fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
             <div>
-                <canvas ref={self.node_ref.clone()} width=600 height=600/>
+                <canvas ref={self.node_ref.clone()} width={format!("{}", self.width)} height={format!("{}", self.height)}/>
                 <button onclick={ctx.link().callback(|_| Msg::Stop)}>
                     { "Stop" }
                 </button>
