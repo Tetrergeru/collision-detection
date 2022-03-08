@@ -36,7 +36,6 @@ export function draw(context, objects) {
                 context.lineTo(objects[i + 2 + j], objects[i + 3 + j])
             }
             i += points * 2 + 2;
-            context.closePath()
             context.fill()
             context.restore()
 
@@ -45,5 +44,38 @@ export function draw(context, objects) {
             }
             i += 4;
         }
+    }
+}
+
+export function draw_quad_tree(context, tree, x1, y1) {
+    console.log(tree.length)
+    draw_quad_tree_helper(context, tree, 0.0, 0.0, x1, y1, 0)
+}
+
+function draw_quad_tree_helper(context, tree, x0, y0, x1, y1, i) {
+    if (tree[i] < 0.1) {
+        return i + 1
+    } else {
+        const xc = x0 + (x1 - x0) / 2
+        const yc = y0 + (y1 - y0) / 2
+
+        context.save()
+        context.beginPath()
+        context.moveTo(xc, y0)
+        context.lineTo(xc, y1)
+
+        context.moveTo(x0, yc)
+        context.lineTo(x1, yc)
+
+        context.closePath()
+        context.stroke()
+        context.restore()
+
+        i += 1
+        i = draw_quad_tree_helper(context, tree, x0, y0, xc, yc, i)
+        i = draw_quad_tree_helper(context, tree, xc, y0, x1, yc, i)
+        i = draw_quad_tree_helper(context, tree, x0, yc, xc, y1, i)
+        i = draw_quad_tree_helper(context, tree, xc, yc, x1, y1, i)
+        return i
     }
 }

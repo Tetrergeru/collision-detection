@@ -1,26 +1,32 @@
 use rand::Rng;
 
 use crate::{
-    circle::CircleObject, geometry::Vector, object::MetaObject, polyhedron::PolyhedronObject,
+    circle::CircleObject,
+    geometry::{Rectangle, Vector},
+    object::MetaObject,
+    polyhedron::PolyhedronObject,
+    quad_tree::QuadTree,
     rectangle::RectangleObject,
 };
 
 pub struct World {
     objects: Vec<MetaObject>,
+    ticked: Vec<bool>,
+    tick: bool,
     size: Vector,
 }
 
 impl World {
     pub fn new(width: f64, height: f64) -> Self {
-        let speed_rng = (30.0, 50.1);
-        let size_rng = (15.0, 20.0);
-        let rects = 200;
-        let circles = 200;
-        let polyhedrons = 200;
+        let speed_rng = (20.0, 30.1);
+        let size_rng = (10.0, 20.0);
+        let rects = 100;
+        let circles = 100;
+        let polyhedrons = 100;
 
         let mut objects = vec![
-            // CircleObject::new_obj(Vector::new(100.0, 100.0), 15.0, Vector::new(-20.0, -20.0)),
-            // CircleObject::new_obj(Vector::new(20.0, 20.0), 15.0, Vector::new(20.0, 20.0)),
+            // CircleObject::new_obj(Vector::new(100.0, 100.0), 70.0, Vector::new(-20.0, -20.0)),
+            // CircleObject::new_obj(Vector::new(99.0, 99.0), 15.0, Vector::new(20.0, 20.0)),
             // RectangleObject::new_obj(100.0, 100.0, 30.0, 30.0, Vector::new(0.0, 0.0)),
             // RectangleObject::new_obj(100.0, 100.0, 30.0, 30.0, Vector::new(-20.0, -20.0)),
             // PolyhedronObject::new_obj(Vector::new(290.0, 300.0), 100.0, 6, Vector::new(-10.0, -10.0)),
@@ -78,15 +84,27 @@ impl World {
             }
         }
         Self {
+            ticked: vec![false; objects.len()],
+            tick: true,
             objects,
             size: Vector::new(width, height),
         }
     }
 
+    pub fn export_quad_tree(&self) -> Box<[f64]> {
+        let mut quad_tree = QuadTree::new(Rectangle::new_vec(Vector::zero(), self.size));
+        for (id, obj) in self.objects.iter().enumerate() {
+            quad_tree.insert(id, obj.aabb());
+        }
+        let mut vec = Vec::new();
+        quad_tree.export(&mut vec);
+        vec.into_boxed_slice()
+    }
+
     pub fn export(&self) -> Box<[f64]> {
         let mut vec = Vec::with_capacity(self.objects.len() * 4);
 
-        for object in self.objects.iter() {
+        for object in self.objects.iter().take(1000) {
             match object {
                 MetaObject::Rect(rect) => {
                     vec.push(1.0);
@@ -122,11 +140,21 @@ impl World {
 
     pub fn tick(&mut self, delta_time: f64) {
         // return;
-        for obj in self.objects.iter_mut() {
-            obj.tick(delta_time);
+        let mut quad_tree = QuadTree::new(Rectangle::new_vec(Vector::zero(), self.size));
+        for (id, obj) in self.objects.iter().enumerate() {
+            quad_tree.insert(id, obj.aabb());
         }
+
+        let mut sum = 0.0;
         for i in 0..self.objects.len() {
-            'inner: for j in (i + 1)..self.objects.len() {
+            self.ticked[i] = self.tick;
+
+            'inner: for j in quad_tree.might_collide(i, self.objects[i].aabb()) {
+                if self.ticked[j] == self.tick {
+                    continue;
+                }
+
+                sum += 1.0;
                 let a = &self.objects[i];
                 let b = &self.objects[j];
                 if !a.aabb().collides_with(&b.aabb()) {
@@ -177,5 +205,13 @@ impl World {
             self.objects[i].kick(kick);
             self.objects[i].mov(mov);
         }
+
+        log::debug!("{}", sum / self.objects.len() as f64);
+
+        for obj in self.objects.iter_mut() {
+            obj.tick(delta_time);
+        }
+
+        self.tick = !self.tick;
     }
 }

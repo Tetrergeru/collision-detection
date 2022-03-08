@@ -8,6 +8,7 @@ mod collisions;
 mod geometry;
 mod object;
 mod polyhedron;
+mod quad_tree;
 mod rectangle;
 mod world;
 
@@ -20,6 +21,8 @@ enum Msg {
     Render(f64),
     Stop,
 }
+
+static DEBUG: bool = false;
 
 struct App {
     world: World,
@@ -70,12 +73,18 @@ impl Component for App {
                 self.ticks += 1;
                 log::info!("{} fps", 1.0 / (self.sum_time / self.ticks as f64));
 
-                self.world.tick(delta_time); //
+                self.world.tick(delta_time);
                 self.last_tick = time;
 
                 draw(&context, self.world.export());
-
-                // self.world.draw(&context);
+                if DEBUG {
+                    draw_quad_tree(
+                        &context,
+                        self.world.export_quad_tree(),
+                        self.width as f64,
+                        self.height as f64,
+                    );
+                }
                 let handle = {
                     let link = ctx.link().clone();
                     request_animation_frame(move |time| link.send_message(Msg::Render(time)))
@@ -122,4 +131,7 @@ fn main() {
 extern "C" {
     #[wasm_bindgen(js_name = "draw")]
     pub fn draw(context: &CanvasRenderingContext2d, objects: Box<[f64]>);
+
+    #[wasm_bindgen(js_name = "draw_quad_tree")]
+    pub fn draw_quad_tree(context: &CanvasRenderingContext2d, tree: Box<[f64]>, x1: f64, y1: f64);
 }
