@@ -1,6 +1,6 @@
 use gloo_render::{request_animation_frame, AnimationFrame};
 use wasm_bindgen::{prelude::wasm_bindgen, JsCast};
-use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
+use web_sys::{window, CanvasRenderingContext2d, HtmlCanvasElement};
 use yew::prelude::*;
 
 mod circle;
@@ -18,8 +18,8 @@ mod geometry_test;
 use world::World;
 
 enum Msg {
-    Render(f64),
-    Stop,
+    Render(f64, bool),
+    Toggle,
 }
 
 static DEBUG: bool = false;
@@ -31,6 +31,7 @@ struct App {
     ticks: u64,
     width: u64,
     height: u64,
+    stopped: bool,
 
     node_ref: NodeRef,
     _render_loop: Option<AnimationFrame>,
@@ -41,8 +42,11 @@ impl Component for App {
     type Properties = ();
 
     fn create(_ctx: &Context<Self>) -> Self {
-        let width = 1200;
-        let height = 800;
+        let window = window().unwrap();
+        let width = window.inner_width().unwrap().as_f64().unwrap() as u64;
+        let height = window.inner_height().unwrap().as_f64().unwrap() as u64 - 30;
+        // let width = 1200;
+        // let height = 800;
         Self {
             world: World::new(width as f64, height as f64),
             node_ref: NodeRef::default(),
@@ -52,12 +56,13 @@ impl Component for App {
             ticks: 0,
             width,
             height,
+            stopped: false,
         }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::Render(time) => {
+            Msg::Render(time, reset) => {
                 let canvas = self.node_ref.cast::<HtmlCanvasElement>().unwrap();
                 let context = canvas
                     .get_context("2d")
@@ -67,6 +72,11 @@ impl Component for App {
                     .unwrap();
 
                 context.clear_rect(0.0, 0.0, canvas.width() as f64, canvas.height() as f64);
+
+                if reset {
+                    self.last_tick = time
+                }
+
                 let delta_time = (time - self.last_tick) / 1000.0;
 
                 self.sum_time += delta_time;
@@ -87,13 +97,26 @@ impl Component for App {
                 }
                 let handle = {
                     let link = ctx.link().clone();
-                    request_animation_frame(move |time| link.send_message(Msg::Render(time)))
+                    request_animation_frame(move |time| link.send_message(Msg::Render(time, false)))
                 };
 
                 self._render_loop = Some(handle);
             }
-            Msg::Stop => {
-                self._render_loop = None;
+            Msg::Toggle => {
+                if self.stopped {
+                    let handle = {
+                        let link = ctx.link().clone();
+                        request_animation_frame(move |time| {
+                            link.send_message(Msg::Render(time, true))
+                        })
+                    };
+
+                    self._render_loop = Some(handle);
+                } else {
+                    self._render_loop = None;
+                }
+                self.stopped = !self.stopped;
+                return true;
             }
         }
         false
@@ -102,9 +125,11 @@ impl Component for App {
     fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
             <div>
-                <canvas ref={self.node_ref.clone()} width={format!("{}", self.width)} height={format!("{}", self.height)}/>
-                <button onclick={ctx.link().callback(|_| Msg::Stop)}>
-                    { "Stop" }
+                <div>
+                    <canvas ref={self.node_ref.clone()} width={format!("{}", self.width)} height={format!("{}", self.height)}/>
+                </div>
+                <button onclick={ctx.link().callback(|_| Msg::Toggle)}>
+                    { if !self.stopped { "Stop" } else { "Continue" } }
                 </button>
             </div>
         }
@@ -114,7 +139,7 @@ impl Component for App {
         if first_render {
             let handle = {
                 let link = ctx.link().clone();
-                request_animation_frame(move |time| link.send_message(Msg::Render(time)))
+                request_animation_frame(move |time| link.send_message(Msg::Render(time, true)))
             };
 
             self._render_loop = Some(handle);
