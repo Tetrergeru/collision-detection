@@ -1,6 +1,6 @@
 use crate::geometry::{Rectangle, Vector};
 
-pub const MAX_IN_NODE: usize = 1;
+pub const MAX_IN_NODE: usize = 20;
 
 pub struct QuadTree {
     node: Node,

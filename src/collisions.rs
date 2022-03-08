@@ -2,13 +2,33 @@ use std::iter;
 
 use crate::{
     circle::CircleObject,
-    geometry::{project_circle, project_point, project_points, Rectangle, Vector},
+    geometry::{project_circle, project_points, Rectangle, Vector},
     polyhedron::PolyhedronObject,
     rectangle::RectangleObject,
 };
 
 pub fn collide_rect_rect(a: &RectangleObject, b: &RectangleObject) -> Option<Vector> {
-    collide_aabb_aabb(&a.aabb(), &b.aabb())
+    let mut min = f64::MAX;
+    let mut res = None;
+
+    let rect_line_x = Rectangle::new_vec(b.shape.coord, Vector::new(1.0, 0.0));
+    let rect_line_y = Rectangle::new_vec(b.shape.coord, Vector::new(0.0, 1.0));
+
+    for line in [rect_line_x, rect_line_y].iter() {
+        let a_proj = project_points(line, a.shape.points());
+        let b_proj = project_points(line, b.shape.points());
+
+        let c = one_dimensional_collision(b_proj, a_proj);
+
+        if c.is_nan() {
+            return None;
+        }
+        if c.abs() < min {
+            min = c.abs();
+            res = Some(line.size * c);
+        }
+    }
+    res
 }
 
 pub fn collide_cirle_circle(a: &CircleObject, b: &CircleObject) -> Option<Vector> {
@@ -21,40 +41,28 @@ pub fn collide_cirle_circle(a: &CircleObject, b: &CircleObject) -> Option<Vector
 }
 
 pub fn collide_circle_rect(a: &CircleObject, b: &RectangleObject) -> Option<Vector> {
-    let x = one_dimensional_collision(
-        Vector::new(b.left(), b.right()),
-        Vector::new(a.center.x - a.radius, a.center.x + a.radius),
-    );
+    let mut min = f64::MAX;
+    let mut res = None;
 
-    let y = one_dimensional_collision(
-        Vector::new(b.top(), b.bottom()),
-        Vector::new(a.center.y - a.radius, a.center.y + a.radius),
-    );
+    let rect_line_x = Rectangle::new_vec(b.shape.coord, Vector::new(1.0, 0.0));
+    let rect_line_y = Rectangle::new_vec(b.shape.coord, Vector::new(0.0, 1.0));
+    let circle_line = Rectangle::new_vec(a.center, (b.center() - a.center).norm());
 
-    let p_line = Rectangle::new_vec(a.center, (a.center - b.center()).norm());
-    let projected_circle = project_point(&p_line, a.center);
-    let p = one_dimensional_collision(
-        project_points(&p_line, b.shape.points()),
-        Vector::new(projected_circle - a.radius, projected_circle + a.radius),
-    );
+    for line in [rect_line_x, rect_line_y, circle_line].iter() {
+        let a_proj = project_circle(line, a.center, a.radius);
+        let b_proj = project_points(line, b.shape.points());
 
-    if x.is_nan() || y.is_nan() || p.is_nan() {
-        return None;
-    }
+        let c = one_dimensional_collision(b_proj, a_proj);
 
-    let some = if x.abs() < y.abs() {
-        if x.abs() < p.abs() {
-            Vector::new(x, 0.0)
-        } else {
-            p_line.size * p
+        if c.is_nan() {
+            return None;
         }
-    } else if y.abs() < p.abs() {
-        Vector::new(0.0, y)
-    } else {
-        p_line.size * p
-    };
-
-    Some(some)
+        if c.abs() < min {
+            min = c.abs();
+            res = Some(line.size * c);
+        }
+    }
+    res
 }
 
 pub fn collide_poly_rect(a: &PolyhedronObject, b: &RectangleObject) -> Option<Vector> {
@@ -134,23 +142,4 @@ pub fn one_dimensional_collision(a: Vector, b: Vector) -> f64 {
         return b.y - a.x;
     }
     f64::MAX
-}
-
-pub fn collide_aabb_aabb(a: &Rectangle, b: &Rectangle) -> Option<Vector> {
-    let x = one_dimensional_collision(
-        Vector::new(b.left(), b.right()),
-        Vector::new(a.left(), a.right()),
-    );
-    let y = one_dimensional_collision(
-        Vector::new(b.top(), b.bottom()),
-        Vector::new(a.top(), a.bottom()),
-    );
-    if x.is_nan() || y.is_nan() {
-        return None;
-    }
-    if x.abs() < y.abs() {
-        Some(Vector::new(x, 0.0))
-    } else {
-        Some(Vector::new(0.0, y))
-    }
 }

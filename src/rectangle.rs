@@ -1,4 +1,4 @@
-use crate::collisions::{collide_circle_rect, collide_rect_rect, collide_poly_rect};
+use crate::collisions::{collide_circle_rect, collide_poly_rect, collide_rect_rect};
 use crate::geometry::{Rectangle, Vector};
 use crate::object::MetaObject;
 
@@ -23,16 +23,8 @@ impl RectangleObject {
         self.shape.left()
     }
 
-    pub fn right(&self) -> f64 {
-        self.shape.right()
-    }
-
     pub fn top(&self) -> f64 {
         self.shape.top()
-    }
-
-    pub fn bottom(&self) -> f64 {
-        self.shape.bottom()
     }
 
     pub fn center(&self) -> Vector {

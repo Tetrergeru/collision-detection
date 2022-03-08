@@ -18,11 +18,11 @@ pub struct World {
 
 impl World {
     pub fn new(width: f64, height: f64) -> Self {
-        let speed_rng = (20.0, 30.1);
+        let speed_rng = (15.0, 30.1);
         let size_rng = (10.0, 20.0);
-        let rects = 100;
-        let circles = 100;
-        let polyhedrons = 100;
+        let rects = 1000;
+        let circles = 1000;
+        let polyhedrons = 1000;
 
         let mut objects = vec![
             // CircleObject::new_obj(Vector::new(100.0, 100.0), 70.0, Vector::new(-20.0, -20.0)),
@@ -104,7 +104,7 @@ impl World {
     pub fn export(&self) -> Box<[f64]> {
         let mut vec = Vec::with_capacity(self.objects.len() * 4);
 
-        for object in self.objects.iter().take(1000) {
+        for object in self.objects.iter() {
             match object {
                 MetaObject::Rect(rect) => {
                     vec.push(1.0);
