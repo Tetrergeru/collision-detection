@@ -1,5 +1,8 @@
-use crate::{circle::CircleObject, geometry::{Vector, Rectangle}, rectangle::RectangleObject};
-use web_sys::CanvasRenderingContext2d;
+use crate::{
+    circle::CircleObject,
+    geometry::{Rectangle, Vector},
+    rectangle::RectangleObject,
+};
 
 pub enum MetaObject {
     Rect(RectangleObject),
@@ -7,13 +10,6 @@ pub enum MetaObject {
 }
 
 impl MetaObject {
-    pub fn draw(&self, context: &CanvasRenderingContext2d) {
-        match self {
-            MetaObject::Rect(rect) => rect.draw(context),
-            MetaObject::Circle(circle) => circle.draw(context),
-        }
-    }
-
     pub fn tick(&mut self, delta_time: f64) {
         match self {
             MetaObject::Rect(rect) => rect.tick(delta_time),

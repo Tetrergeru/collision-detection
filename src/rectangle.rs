@@ -1,8 +1,6 @@
-use crate::collisions::{collide_rect_rect, collide_circle_rect};
+use crate::collisions::{collide_circle_rect, collide_rect_rect};
 use crate::geometry::{Rectangle, Vector};
 use crate::object::MetaObject;
-
-use web_sys::CanvasRenderingContext2d;
 
 pub struct RectangleObject {
     pub shape: Rectangle,
@@ -53,19 +51,6 @@ impl RectangleObject {
 }
 
 impl RectangleObject {
-    pub fn draw(&self, context: &CanvasRenderingContext2d) {
-        context.save();
-        context.begin_path();
-        context.set_fill_style(&("#f00".to_string()).into());
-        context.move_to(self.left(), self.top());
-        context.line_to(self.right(), self.top());
-        context.line_to(self.right(), self.bottom());
-        context.line_to(self.left(), self.bottom());
-        context.close_path();
-        context.fill();
-        context.restore();
-    }
-
     pub fn tick(&mut self, delta_time: f64) {
         if self.immovable {
             return;

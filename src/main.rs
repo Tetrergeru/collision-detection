@@ -1,14 +1,14 @@
 use gloo_render::{request_animation_frame, AnimationFrame};
-use wasm_bindgen::JsCast;
+use wasm_bindgen::{JsCast, prelude::wasm_bindgen};
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
 use yew::prelude::*;
 
+mod circle;
+mod collisions;
 mod geometry;
 mod object;
 mod rectangle;
 mod world;
-mod circle;
-mod collisions;
 
 #[cfg(test)]
 mod geometry_test;
@@ -23,6 +23,8 @@ enum Msg {
 struct App {
     world: World,
     last_tick: f64,
+    sum_time: f64,
+    ticks: u64,
 
     node_ref: NodeRef,
     _render_loop: Option<AnimationFrame>,
@@ -38,6 +40,8 @@ impl Component for App {
             node_ref: NodeRef::default(),
             _render_loop: None,
             last_tick: 0.0,
+            sum_time: 0.0,
+            ticks: 0,
         }
     }
 
@@ -53,9 +57,18 @@ impl Component for App {
                     .unwrap();
 
                 context.clear_rect(0.0, 0.0, canvas.width() as f64, canvas.height() as f64);
-                self.world.tick((time - self.last_tick) / 1000.0);//(0.1); //
+                let delta_time = (time - self.last_tick) / 1000.0;
+
+                self.sum_time += delta_time;
+                self.ticks += 1;
+                log::info!("{} fps", 1.0 / (self.sum_time / self.ticks as f64));
+
+                self.world.tick(delta_time); //(0.1); //
                 self.last_tick = time;
-                self.world.draw(&context);
+
+                draw(&context, self.world.export());
+
+                // self.world.draw(&context);
 
                 let handle = {
                     let link = ctx.link().clone();
@@ -97,4 +110,10 @@ impl Component for App {
 fn main() {
     wasm_logger::init(wasm_logger::Config::default());
     yew::start_app::<App>();
+}
+
+#[wasm_bindgen(module = "/src/draw.js")]
+extern "C" {
+    #[wasm_bindgen(js_name = "draw")]
+    pub fn draw(context: &CanvasRenderingContext2d, objects: Box<[f64]>);
 }

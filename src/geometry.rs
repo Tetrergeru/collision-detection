@@ -1,5 +1,3 @@
-use std::{borrow::Borrow, sync::mpsc::Receiver};
-
 #[derive(Clone, Copy, Debug)]
 pub struct Vector {
     pub x: f64,
