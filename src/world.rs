@@ -12,25 +12,27 @@ use crate::{
 pub struct World {
     objects: Vec<MetaObject>,
     ticked: Vec<bool>,
+    health: Vec<isize>,
     tick: bool,
     size: Vector,
 }
 
 impl World {
     pub fn new(width: f64, height: f64) -> Self {
-        let speed_rng = (15.0, 30.1);
-        let size_rng = (10.0, 20.0);
-        let rects = 1000;
-        let circles = 1000;
-        let polyhedrons = 1000;
+        let speed_rng = (30.0, 50.1);
+        let size_rng = (20.0, 30.0);
+        let rects = 100;
+        let circles = 100;
+        let polyhedrons = 100;
 
         let mut objects = vec![
-            // CircleObject::new_obj(Vector::new(100.0, 100.0), 70.0, Vector::new(-20.0, -20.0)),
-            // CircleObject::new_obj(Vector::new(99.0, 99.0), 15.0, Vector::new(20.0, 20.0)),
+            // CircleObject::new_obj(Vector::new(200.0, 200.0), 50.0, Vector::new(-5.0, -5.0)),
+            // PolyhedronObject::new_obj(Vector::new(60.0, 60.0), 50.0, 3, Vector::new(5.0, 5.0)),
+            // CircleObject::new_obj(Vector::new(60.0, 60.0), 50.0, Vector::new(2.0, 2.0)),
             // RectangleObject::new_obj(100.0, 100.0, 30.0, 30.0, Vector::new(0.0, 0.0)),
-            // RectangleObject::new_obj(100.0, 100.0, 30.0, 30.0, Vector::new(-20.0, -20.0)),
-            // PolyhedronObject::new_obj(Vector::new(290.0, 300.0), 100.0, 6, Vector::new(-10.0, -10.0)),
-            // CircleObject::new_obj(Vector::new(140.0, 140.0), 100.0, Vector::new(10.0, 10.0)),
+            // RectangleObject::new_obj(10.0, 10.0, 30.0, 30.0, Vector::new(20.0, 20.0)),
+            // PolyhedronObject::new_obj(Vector::new(20.0, 20.0), 30.0, 3, Vector::new(10.0, 10.0)),
+            // CircleObject::new_obj(Vector::new(140.0, 140.0), 10.0, Vector::new(-10.0, -10.0)),
         ];
         {
             let mut rng = rand::thread_rng();
@@ -85,6 +87,7 @@ impl World {
         }
         Self {
             ticked: vec![false; objects.len()],
+            health: vec![3; objects.len()],
             tick: true,
             objects,
             size: Vector::new(width, height),
@@ -94,6 +97,9 @@ impl World {
     pub fn export_quad_tree(&self) -> Box<[f64]> {
         let mut quad_tree = QuadTree::new(Rectangle::new_vec(Vector::zero(), self.size));
         for (id, obj) in self.objects.iter().enumerate() {
+            if self.health[id] <= 0 {
+                continue;
+            }
             quad_tree.insert(id, obj.aabb());
         }
         let mut vec = Vec::new();
@@ -104,10 +110,15 @@ impl World {
     pub fn export(&self) -> Box<[f64]> {
         let mut vec = Vec::with_capacity(self.objects.len() * 4);
 
-        for object in self.objects.iter() {
+        for (idx, object) in self.objects.iter().enumerate() {
+            let health = self.health[idx];
+            if health <= 0 {
+                continue;
+            }
             match object {
                 MetaObject::Rect(rect) => {
                     vec.push(1.0);
+                    vec.push(health as f64);
                     vec.push(rect.left());
                     vec.push(rect.top());
                     vec.push(rect.shape.size.x);
@@ -115,12 +126,14 @@ impl World {
                 }
                 MetaObject::Circle(circle) => {
                     vec.push(2.0);
+                    vec.push(health as f64);
                     vec.push(circle.center.x);
                     vec.push(circle.center.y);
                     vec.push(circle.radius);
                 }
                 MetaObject::Poly(poly) => {
                     vec.push(3.0);
+                    vec.push(health as f64);
                     vec.push(poly.points_len() as f64);
                     for point in poly.points() {
                         vec.push(point.x);
@@ -142,18 +155,27 @@ impl World {
         // return;
         let mut quad_tree = QuadTree::new(Rectangle::new_vec(Vector::zero(), self.size));
         for (id, obj) in self.objects.iter().enumerate() {
+            if self.health[id] <= 0 {
+                continue;
+            }
             quad_tree.insert(id, obj.aabb());
         }
 
         let mut sum = 0.0;
         for i in 0..self.objects.len() {
             self.ticked[i] = self.tick;
+            if self.health[i] <= 0 {
+                continue;
+            }
 
             'inner: for j in quad_tree.might_collide(i, self.objects[i].aabb()) {
+            //'inner: for j in (i+1)..self.objects.len() {
                 if self.ticked[j] == self.tick {
                     continue;
                 }
-
+                if self.health[j] <= 0  {
+                    continue 'inner;
+                }
                 sum += 1.0;
                 let a = &self.objects[i];
                 let b = &self.objects[j];
@@ -177,6 +199,9 @@ impl World {
 
                         self.objects[j].kick(b_kick);
                         self.objects[j].mov(vector * 0.5);
+
+                        self.health[i] -= 1;
+                        self.health[j] -= 1;
                     }
                 }
             }
@@ -208,7 +233,10 @@ impl World {
 
         log::debug!("{}", sum / self.objects.len() as f64);
 
-        for obj in self.objects.iter_mut() {
+        for (idx, obj) in self.objects.iter_mut().enumerate() {
+            if self.health[idx] <= 0 {
+                continue;
+            }
             obj.tick(delta_time);
         }
 

@@ -1,6 +1,6 @@
 use crate::geometry::{Rectangle, Vector};
 
-pub const MAX_IN_NODE: usize = 20;
+pub const MAX_IN_NODE: usize = 1;
 
 pub struct QuadTree {
     node: Node,
@@ -29,7 +29,7 @@ impl QuadTree {
 
     pub fn export(&self, vec: &mut Vec<f64>) {
         self.node.export(vec);
-    } 
+    }
 }
 
 struct Node {
@@ -138,7 +138,7 @@ impl Node {
                 }
             }
         }
-    } 
+    }
 }
 
 fn divide_aabb(aabb: Rectangle) -> [Rectangle; 4] {

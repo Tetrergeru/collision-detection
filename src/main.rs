@@ -22,7 +22,7 @@ enum Msg {
     Toggle,
 }
 
-static DEBUG: bool = false;
+static DEBUG: bool = true;
 
 struct App {
     world: World,

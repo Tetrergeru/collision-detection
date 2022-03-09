@@ -103,6 +103,7 @@ impl PolyhedronObject {
 
             let p_len = (self.points[i] - self.points[j]).len();
             let p_vec = (self.points[i] - self.points[j]) * (1.0 / p_len);
+            let p_vec = Vector::new(-p_vec.y, p_vec.x);
 
             Rectangle::new_vec(self.points[i] + self.center, p_vec)
         })
