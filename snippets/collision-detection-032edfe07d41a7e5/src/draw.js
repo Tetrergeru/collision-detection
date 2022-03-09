@@ -1,14 +1,21 @@
-const DEBUG = false
+const DEBUG = true
+
+const COLORS = ['#000', '#f00', '#0f0', '#00f']
 
 export function draw(context, objects) {
     let i = 0;
     while (i < objects.length) {
         if (objects[i] < 1.1) {
-            context.fillStyle = '#f00';
+            context.save()
+            i += 1;
+            context.fillStyle = COLORS[objects[i]]
             context.fillRect(objects[i + 1], objects[i + 2], objects[i + 3], objects[i + 4]);
             i += 5;
+            context.restore()
         } else if (objects[i] < 2.1) {
-            context.fillStyle = '#0f0';
+            context.save()
+            i += 1;
+            context.fillStyle = COLORS[objects[i]]
             context.moveTo(objects[i + 1], objects[i + 2])
             context.beginPath()
             context.arc(objects[i + 1], objects[i + 2], objects[i + 3], 0, 2 * Math.PI);
@@ -25,10 +32,12 @@ export function draw(context, objects) {
             }
 
             i += 4;
+            context.restore()
 
         } else {
             context.save()
-            context.fillStyle = '#00f';
+            i += 1;
+            context.fillStyle = COLORS[objects[i]]
             const points = objects[i + 1];
             context.beginPath()
             context.moveTo(objects[i + 2], objects[i + 3])

@@ -1,4 +1,4 @@
-import { draw } from './snippets/collision-detection-032edfe07d41a7e5/src/draw.js';
+import { draw, draw_quad_tree } from './snippets/collision-detection-032edfe07d41a7e5/src/draw.js';
 
 let wasm;
 
@@ -283,7 +283,7 @@ async function load(module, imports) {
 
 async function init(input) {
     if (typeof input === 'undefined') {
-        input = new URL('index-7809ffcccef2ccd4_bg.wasm', import.meta.url);
+        input = new URL('index-9496a7c2d3a5f8e4_bg.wasm', import.meta.url);
     }
     const imports = {};
     imports.wbg = {};
@@ -313,6 +313,11 @@ async function init(input) {
         var v0 = getArrayF64FromWasm0(arg1, arg2).slice();
         wasm.__wbindgen_free(arg1, arg2 * 8);
         draw(getObject(arg0), v0);
+    };
+    imports.wbg.__wbg_drawquadtree_8001ad41a082cff7 = function(arg0, arg1, arg2, arg3, arg4) {
+        var v0 = getArrayF64FromWasm0(arg1, arg2).slice();
+        wasm.__wbindgen_free(arg1, arg2 * 8);
+        draw_quad_tree(getObject(arg0), v0, arg3, arg4);
     };
     imports.wbg.__wbindgen_string_new = function(arg0, arg1) {
         var ret = getStringFromWasm0(arg0, arg1);
@@ -587,11 +592,11 @@ async function init(input) {
     imports.wbg.__wbindgen_throw = function(arg0, arg1) {
         throw new Error(getStringFromWasm0(arg0, arg1));
     };
-    imports.wbg.__wbindgen_closure_wrapper181 = function(arg0, arg1, arg2) {
+    imports.wbg.__wbindgen_closure_wrapper184 = function(arg0, arg1, arg2) {
         var ret = makeClosure(arg0, arg1, 59, __wbg_adapter_22);
         return addHeapObject(ret);
     };
-    imports.wbg.__wbindgen_closure_wrapper370 = function(arg0, arg1, arg2) {
+    imports.wbg.__wbindgen_closure_wrapper373 = function(arg0, arg1, arg2) {
         var ret = makeClosure(arg0, arg1, 119, __wbg_adapter_25);
         return addHeapObject(ret);
     };
