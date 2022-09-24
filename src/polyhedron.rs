@@ -96,8 +96,7 @@ impl PolyhedronObject {
         self.points.len()
     }
 
-    #[allow(clippy::needless_lifetimes)]
-    pub fn lines<'a>(&'a self) -> impl Iterator<Item = Rectangle> + 'a {
+    pub fn lines(&self) -> impl Iterator<Item = Rectangle> + '_ {
         (0..self.points.len()).map(|i| {
             let j = (i + 1) % self.points.len();
 

@@ -20,10 +20,10 @@ pub struct World {
 impl World {
     pub fn new(width: f64, height: f64) -> Self {
         let speed_rng = (30.0, 50.1);
-        let size_rng = (20.0, 30.0);
-        let rects = 100;
-        let circles = 100;
-        let polyhedrons = 100;
+        let size_rng = (1.0, 200.0);
+        let rects = 1500;
+        let circles = 1500;
+        let polyhedrons = 1500;
 
         let mut objects = vec![
             // CircleObject::new_obj(Vector::new(200.0, 200.0), 50.0, Vector::new(-5.0, -5.0)),
